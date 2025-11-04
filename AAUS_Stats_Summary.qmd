@@ -1,0 +1,14 @@
+---
+title: "AAUS Statistics Summary"
+author: "Ross Whippo"
+format: html
+editor: visual
+---
+
+## YEAR AAUS Statistics Committee Annual Report
+
+### Ross Whippo, Chair
+
+### Committee: here
+
+Summary here.

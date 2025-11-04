@@ -1,0 +1,64 @@
+---
+title: "AAUS Statistics QAQC Report"
+author: "Ross Whippo, Chair"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+format: html
+editor: visual
+---
+
+```{r echo = F, include = F}
+
+rm(list = ls())
+
+setwd("~/git/AAUS_stats")
+
+library(tidyverse)
+library(viridis)
+library(DT)
+
+source("functions/dive_diver_mismatch.R")
+source("functions/solo_divers.R")
+source("functions/dive_group_totals.R")
+
+rawStats <- read_csv("data/ResultsGrid_ExportData.csv")
+
+```
+
+## vX
+
+##### Committee: Joe Grinnan, Sarah Geidmann, Cat Harris, Bill Power
+
+### Summary
+
+This document contains a summary of statistics irregularities submitted to AAUS by AAUS OMs. Inclusion in this document does not necessarily reflect an error in reported statistics, it simply suggests where common mistakes may have been made. A manual review of the listed OMs is necessary to determine if it is indeed an error, or an accurate entry.
+
+### Possible Errors
+
+#### Listed dives fewer than listed divers
+
+```{r echo = F}
+
+dive_diver_mismatch(rawStats)
+
+```
+
+#### Total Divers equal one
+
+```{r echo = F}
+
+solo_divers(rawStats)
+
+```
+
+#### Dive totals by gas, mode, plan, depth, purpose, environment, decompression
+
+```{r echo = F, include = F}
+
+group_tab <- dive_group_totals(rawStats)
+
+```
+
+```{r echo = F}
+datatable(group_tab)
+
+```
