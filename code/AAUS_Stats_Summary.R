@@ -1042,6 +1042,74 @@ sum(totalDives$totalDives) / sum(totalDives$totalIncidents)
 
 # SCRATCH PAD ####
 
+# FIU all stats check
+sort(unique(StatsALLfiltered$OM))
+
+FIU <- StatsALLfiltered |>
+  filter(OM == "Florida International University")
+
+str(FIU)
+
+## Plot various metrics
+
+# number of divers
+FIU |>
+  ggplot() +
+  geom_point(aes(x = Year, y = `Total Divers`))
+
+# dives by type
+FIU |>
+  ggplot(aes(x = Year)) +
+  geom_point(aes(y = `# Air Dives`), color = "blue") +
+  geom_point(aes(y = `# Nitrox Dives`), color = "yellow") +
+  geom_point(aes(y = `# Science Dives`), color = "red") +
+  geom_point(aes(y = `#T/P Dives`), color = "green") 
+
+# divers versus dives
+FIU |>
+  ggplot(aes(x = Year)) +
+  geom_point(aes(y = `# Air Dives`), color = "blue") +
+  geom_point(aes(y = `# Air Divers`), color = "lightblue") +
+  geom_point(aes(y = `Air Dive Time (min)`), color = "darkblue") 
+
+# time versus depths
+sum(FIU$`# 191+ft Dives`)
+
+FIU |>
+  select(Year,
+         `Air Dive Time (min)`,
+         `Nitrox Dive Time (min)`,
+         `# 0-30ft Dives`,
+         `#31-60ft Dives`,
+         `#61-100ft Dives`,
+         `# 101-130ft Dives`,
+         `# 131-150ft Dives`,
+         `# 151-190ft Dives`,
+         `# 191+ft Dives`) |>
+  pivot_longer(cols = `# 0-30ft Dives`:`# 191+ft Dives`,
+               names_to = "depth",
+               values_to = "dives") |>
+  mutate(depth = factor(depth, levels = c("# 0-30ft Dives",
+                                      "#31-60ft Dives",
+                                      "#61-100ft Dives",
+                                      "# 101-130ft Dives",
+                                      "# 131-150ft Dives",
+                                      "# 151-190ft Dives",
+                                      "# 191+ft Dives"
+                                      ))) |>
+  mutate(totalTime = `Air Dive Time (min)` + `Nitrox Dive Time (min)`) |>
+  ggplot(aes(x = Year)) +
+    geom_point(aes(y = dives, fill = depth), shape = 21, size = 3) +
+    scale_fill_viridis(discrete = TRUE) +
+  theme_bw()
+
+# average of total divers to total dives
+FIU |>
+  select(Year, `Total Divers`, `# Science Dives`, `#T/P Dives`) |>
+  mutate(DiveDiverAvg = (`# Science Dives` + `#T/P Dives`)/`Total Divers`) |>
+  ggplot(aes(x = Year)) +
+  geom_point(aes(y = DiveDiverAvg))
+
 # MOTE 2024 Issue
 
 mote <- rawStats |>
