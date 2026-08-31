@@ -1,10 +1,10 @@
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #                                                                             ##
 # AAUS Stats QAQC                                                             ##
-# Data are current as of 2024-12-18                                           ##
+# Script Created 2024-12-18                                                   ##
 # Data source: American Academy of Underwater Sciences                        ##
 # R code prepared by Ross Whippo                                              ##  
-# Last updated 2024-12-18                                                     ##
+# Last updated 2025-10-05                                                     ##
 #                                                                             ##
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -38,12 +38,14 @@ library(viridis)
 
 source("functions/dive_diver_mismatch.R")
 source("functions/solo_divers.R")
+source("functions/total_divers.R")
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # READ IN AND PREPARE DATA                                                  ####
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-rawStats <- read_csv("data/ResultsGrid_ExportData.csv")
+# rawStats <- read_csv("data/ResultsGrid_ExportData.csv")
+ rawStats <- read_csv("data/AAUS_Stats_2024.csv")
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # QC DATA                                                                   ####
@@ -52,6 +54,8 @@ rawStats <- read_csv("data/ResultsGrid_ExportData.csv")
 dive_diver_mismatch(rawStats)
 
 solo_divers(rawStats)
+
+total_divers(rawStats)
 
 # Identify OMs with single divers
 

@@ -1,66 +1,378 @@
 ---
-title: "AAUS Statistics QAQC Report"
+title: "AAUS Statistics Report - 2025"
 author: "Ross Whippo, Chair"
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
-format: html
-editor: visual
+format: 
+  pdf:
+    keep-tex: true
+    geometry:
+      - portrait
+      - margin=0.75in
+    include-in-header: 
+      text: |
+        \usepackage{booktabs}
+        \usepackage{longtable}
+        \usepackage{array}
+
 ---
 
-```{r echo = F, include = F}
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
 
 rm(list = ls())
 
 setwd("~/git/AAUS_stats")
 
-library(tidyverse)
+library(readr)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
 library(viridis)
-library(DT)
+library(scales)
+library(gt)
+library(viridis)
+library(kableExtra)
+library(knitr) 
+library(janitor)
+library(stringr)
 
-source("functions/dive_diver_mismatch.R")
-source("functions/solo_divers.R")
-source("functions/dive_group_totals.R")
+# single import
+StatsALLyear <- read_csv("data/All_Stats.csv")
 
-rawStats <- read_csv("data/ResultsGrid_ExportData.csv")
+# remove duplicates
+dupes <- StatsALLyear %>%
+  unite(OM_year, OM, Year, sep = "_") %>%
+  filter(duplicated(OM_year))
+
+StatsALLfiltered <- StatsALLyear %>%
+  distinct()
+
+rm(dupes, StatsALLyear)
+
+Stats5year <- StatsALLfiltered |>
+  filter(Year > 2020)
+
+Stats2025 <- read_csv("data/AAUS_Stats_2025.csv")
 
 ```
 
-## vX
 
-##### Committee: Joe Grinnan, Sarah Geidmann, Cat Harris, Bill Power 
+##### Committee: Bill Power
+
 
 ### Summary
 
-This document contains a summary of statistics irregularities submitted to AAUS by AAUS OMs. Inclusion in this document does not necessarily reflect an error in reported statistics, it simply suggests where common mistakes may have been made. A manual review of the listed OMs is necessary to determine if it is indeed an error, or an accurate entry.
+What follows is a brief overview of 2025 statistics totals and trends since 2021. A full 2025 statistics report can be requested from the Statistics Chair at statistics@aaus.org.
 
-### Possible Errors
+- OMs reporting: 158
 
-#### Listed dives fewer than listed divers
+- Total divers: 6,548
 
-```{r echo = F}
+- Total dives logged: 185,711
 
-dive_diver_mismatch(rawStats)
+- Total minutes: 6,953,152 (Scientific) / 1,232,102 (Training/Proficiency)
+
+- Incidents: 20 (1.08 per 10,000 dives)
+
+
+### Trends In Diving Statistics Since 2021
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+# of OMs reporting by year
+Stats5year %>%
+  unite(OM_year, OM, Year, sep = "_") %>%
+  distinct(OM_year) %>%
+  separate_wider_delim(OM_year, delim = "_", names = c("OM", "Year")) %>%
+  mutate(OMnum = 1) %>%
+  ggplot() +
+  stat_summary(aes(x = Year, y = OMnum, group = 1),
+    fun = sum,
+    geom = "line",
+    size = 2,
+    color = "#414487FF"
+  ) +
+  coord_cartesian(ylim = c(120, 170)) +
+  labs(y = "Number OMs Reporting") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(size = 15),
+    axis.title.x = element_text(size = 18, margin = margin(t = 15)),
+    axis.text.y = element_text(size = 15),
+    axis.title.y = element_text(size = 18, margin = margin(r = 15))
+  )
 
 ```
 
-#### Total Divers equal one
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
 
-```{r echo = F}
-
-solo_divers(rawStats)
+# of divers logging dives
+Stats5year %>%
+  unite(OM_year, OM, Year, sep = "_") %>%
+  distinct(OM_year, .keep_all = TRUE) %>%
+  separate_wider_delim(OM_year, delim = "_", names = c("OM", "Year")) %>%
+  ggplot() +
+  stat_summary(aes(x = Year, y = `Total Divers`, group = 1),
+    fun = sum,
+    geom = "line",
+    size = 2,
+    color = "#414487FF"
+  ) +
+  labs(y = "Total Number of Divers") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(size = 15),
+    axis.title.x = element_text(size = 18, margin = margin(t = 15)),
+    axis.text.y = element_text(size = 15),
+    axis.title.y = element_text(size = 18, margin = margin(r = 15))
+  )
 
 ```
 
-#### Dive totals by gas, mode, plan, depth, purpose, environment, decompression
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
 
-```{r echo = F, include = F}
+# number of dives
 
-group_tab <- dive_group_totals(rawStats)
+Stats5year %>%
+  select(Year, `# Science Dives`, `#T/P Dives`) %>%
+  pivot_longer(`# Science Dives`:`#T/P Dives`, names_to = "Dive Purpose") %>%
+  group_by(Year, `Dive Purpose`) %>%
+  summarise(`Number of Dives` = sum(value)) %>%
+  ggplot() +
+  geom_col(aes(x = Year, y = `Number of Dives`, fill = `Dive Purpose`),
+    position = "dodge"
+  ) +
+  scale_fill_viridis(
+    discrete = TRUE,
+    option = "G",
+    labels = c("Science", "Training/Proficiency"),
+    begin = 0.4,
+    end = 0.8
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(size = 10),
+    axis.title.x = element_text(size = 18, margin = margin(t = 15)),
+    axis.text.y = element_text(size = 15),
+    axis.title.y = element_text(size = 18, margin = margin(r = 15))
+  )
 
 ```
 
-```{r echo = F}
-datatable(group_tab)
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+# dive minutes by type
+Stats5year %>%
+  select(Year, `Science Dive Time (min)`, `T/P Dive Time (min)`) %>%
+  pivot_longer(`Science Dive Time (min)`:`T/P Dive Time (min)`, names_to = "Dive Purpose") %>%
+  group_by(Year, `Dive Purpose`) %>%
+  summarise(`Dive Minutes` = sum(value)) %>%
+  ggplot() +
+  geom_col(aes(x = Year, y = `Dive Minutes`, fill = `Dive Purpose`),
+    position = "dodge"
+  ) +
+  scale_y_continuous(labels = comma) +
+  scale_fill_viridis(
+    discrete = TRUE,
+    option = "G",
+    labels = c("Science", "Training/Proficiency"),
+    begin = 0.4,
+    end = 0.8
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(size = 10),
+    axis.title.x = element_text(size = 18, margin = margin(t = 15)),
+    axis.text.y = element_text(size = 15),
+    axis.title.y = element_text(size = 18, margin = margin(r = 15))
+  )
+
 
 ```
 
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
 
+# Dives by Mode
+Stats5year %>%
+  select(Year, `# Open Circuit Dives`, `# Hookah Dives`, `# Rebreather Dives`, `# Surface Supplied Dives`) %>%
+  pivot_longer(`# Open Circuit Dives`:`# Surface Supplied Dives`, names_to = "Dive Mode") %>%
+  group_by(Year, `Dive Mode`) %>%
+  summarise(`Total Dives` = sum(value)) %>%
+  ggplot() +
+  geom_col(aes(x = Year, y = `Total Dives`, fill = `Dive Mode`),
+    position = "dodge", width = 0.66
+  ) +
+  scale_y_continuous(labels = comma, trans = "log10") +
+  scale_fill_viridis(
+    discrete = TRUE,
+    option = "H",
+    labels = c("Hookah", "Open Circuit", "Rebreather", "Surface Supply"),
+    begin = 0.2,
+    end = 0.8
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(size = 10),
+    axis.title.x = element_text(size = 18, margin = margin(t = 15)),
+    axis.text.y = element_text(size = 15),
+    axis.title.y = element_text(size = 18, margin = margin(r = 15))
+  )
+
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+# Dives by Gas
+Stats5year %>%
+  select(Year, `# Air Dives`, `# Nitrox Dives`, `# MIxed Gas Dives`) %>%
+  pivot_longer(`# Air Dives`:`# MIxed Gas Dives`, names_to = "Dive Gas") %>%
+  group_by(Year, `Dive Gas`) %>%
+  summarise(`Total Dives` = sum(value)) %>%
+  ggplot() +
+  geom_col(aes(x = Year, y = `Total Dives`, fill = `Dive Gas`),
+    position = "dodge", width = 0.75
+  ) +
+  scale_y_continuous(labels = comma, trans = "log10") +
+  scale_fill_viridis(
+    discrete = TRUE,
+    option = "A",
+    labels = c("Air", "Mixed Gas", "Nitrox"),
+    begin = 0.2,
+    end = 0.8
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(size = 10),
+    axis.title.x = element_text(size = 18, margin = margin(t = 15)),
+    axis.text.y = element_text(size = 15),
+    axis.title.y = element_text(size = 18, margin = margin(r = 15))
+  )
+
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+# Dives by Environment
+Stats5year %>%
+  select(
+    Year, `# Aquarium Dives`, `# Bluewater Dives`, `# IcePolar Dives`, `# Overhead Dives`,
+    `# ReqDecomp Dives`
+  ) %>%
+  pivot_longer(`# Aquarium Dives`:`# ReqDecomp Dives`, names_to = "Specialized Environment") %>%
+  group_by(Year, `Specialized Environment`) %>%
+  summarise(`Total Dives` = sum(value)) %>%
+  ggplot() +
+  geom_col(aes(x = Year, y = `Total Dives`, fill = `Specialized Environment`),
+    position = "dodge", width = 0.6
+  ) +
+  scale_y_continuous(labels = comma, trans = "log10") +
+  scale_fill_viridis(
+    discrete = TRUE,
+    option = "G",
+    labels = c("Aquarium", "Bluewater", "Ice/Polar", "Overhead", "Req. Decomp."),
+    begin = 0.1,
+    end = 0.9
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(size = 10),
+    axis.title.x = element_text(size = 18, margin = margin(t = 15)),
+    axis.text.y = element_text(size = 15),
+    axis.title.y = element_text(size = 18, margin = margin(r = 15))
+  )
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+# Dives by depth
+Stats5year %>%
+  select(
+    Year, `# 0-30ft Dives`, `#31-60ft Dives`, `#61-100ft Dives`, `# 101-130ft Dives`,
+    `# 131-150ft Dives`, `# 151-190ft Dives`, `# 191+ft Dives`
+  ) %>%
+  pivot_longer(`# 0-30ft Dives`:`# 191+ft Dives`, names_to = "Depth") %>%
+  mutate(Depth = factor(Depth, levels = c(
+    "# 0-30ft Dives",
+    "#31-60ft Dives",
+    "#61-100ft Dives",
+    "# 101-130ft Dives",
+    "# 131-150ft Dives",
+    "# 151-190ft Dives",
+    "# 191+ft Dives"
+  ))) %>%
+  group_by(Year, `Depth`) %>%
+  summarise(`Total Dives` = sum(value)) %>%
+  ggplot() +
+  geom_col(aes(x = Year, y = `Total Dives`, fill = `Depth`)) +
+  scale_y_continuous(labels = comma) +
+  scale_fill_viridis(
+    discrete = TRUE,
+    option = "G",
+    labels = c("0-30ft", "31-60ft", "61-100ft", "101-130ft", "131-150ft", "151-190ft", "190+ft"),
+    begin = 0.9,
+    end = 0.1
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(size = 10),
+    axis.title.x = element_text(size = 18, margin = margin(t = 15)),
+    axis.text.y = element_text(size = 15),
+    axis.title.y = element_text(size = 18, margin = margin(r = 15))
+  )
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+# Dive incident prevalence
+Stats5year %>%
+  select(Year, `# Science Dives`, `#T/P Dives`, `Total  Dive Incidents`) %>%
+  mutate(`Total Dives` = `# Science Dives` + `#T/P Dives`) %>%
+  group_by(Year) %>%
+  summarise(across(`Total  Dive Incidents`:`Total Dives`, sum)) %>%
+  mutate(`Incident Rate (per 10,000 dives)` = `Total  Dive Incidents` / (`Total Dives` / 10000)) %>%
+  ggplot() +
+  geom_line(aes(x = Year, y = `Incident Rate (per 10,000 dives)`), size = 2, color = "#414487FF") +
+  scale_color_viridis(
+    discrete = TRUE,
+    option = "G"
+  ) +
+  theme_bw() +
+  labs(y = "Incident Rate (per 10k dives)") +
+  theme(
+    axis.text.x = element_text(size = 10),
+    axis.title.x = element_text(size = 18, margin = margin(t = 15)),
+    axis.text.y = element_text(size = 15),
+    axis.title.y = element_text(size = 18, margin = margin(r = 15))
+  )
+```
